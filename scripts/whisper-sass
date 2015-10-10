@@ -1,0 +1,19 @@
+#!/bin/bash
+
+WORKSPACE_PATH=~/workspace/web
+TEMP_PATH=$WORKSPACE_PATH/tmp
+
+function -main() {
+    if [ $# -eq 0 ];
+    then
+	echo "error: 缺少参数,请指定项目目录名称"
+    else
+	if [ ! -d $TEMP_PATH/styles ];
+	then
+	    mkdir $TEMP_PATH/styles
+	fi
+	sass $1/styles/app.scss $TEMP_PATH/styles/app.css --no-cache -t expanded
+    fi
+}
+
+-main $@

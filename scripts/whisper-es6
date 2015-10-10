@@ -1,0 +1,15 @@
+#!/bin/bash
+
+WORKSPACE_PATH=~/workspace/web
+TEMP_PATH=$WORKSPACE_PATH/tmp
+
+function -main() {
+    if [ $# -eq 0 ];
+    then
+	echo "error: 缺少参数,请指定项目目录名称"
+    else
+	babel $1/js -m amdStrict -d $TEMP_PATH/js > /dev/null
+    fi
+}
+
+-main $@

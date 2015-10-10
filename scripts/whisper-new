@@ -1,0 +1,101 @@
+#!/bin/bash
+
+WORKSPACE_PATH=~/workspace/web
+PROJECTS_PATH=$WORKSPACE_PATH/projects
+
+function create_trigger() {
+    echo
+    echo -e "  \033[00;32m创建Trigger\033[00m es6"
+    echo "[\"trigger\", \"$1\", \"es6\", \"js/*.js\", \"--\", \"whisper-es6\", \"$1\"]" | watchman -j > /dev/null
+    echo -e "  \033[00;32m创建Trigger\033[00m sass"
+    echo "[\"trigger\", \"$1\", \"sass\", \"styles/*.scss\", \"--\", \"whisper-sass\", \"$1\"]" | watchman -j > /dev/null
+    echo -e "  \033[00;32m创建Trigger\033[00m images"
+    echo "[\"trigger\", \"$1\", \"images\", \"images/*.*\", \"--\", \"cp\", \"-r\", \"$1/images/\", \"$TEMP_PATH/images\"]" | watchman -j > /dev/null
+    echo -e "  \033[00;32m创建Trigger\033[00m fonts"
+    echo "[\"trigger\", \"$1\", \"fonts\", \"fonts/*.*\", \"--\", \"cp\", \"-r\", \"$1/fonts/\", \"$TEMP_PATH/fonts\"]" | watchman -j > /dev/null
+    echo -e "  \033[00;32m创建Trigger\033[00m pages"
+    echo "[\"trigger\", \"$1\", \"pages\", \"pages/*.html\", \"--\", \"cp\", \"-r\", \"$1/pages/\", \"$TEMP_PATH/pages\"]" | watchman -j > /dev/null
+    echo
+}
+
+function check_trigger() {
+    local TRIGGERS=`watchman trigger-list $1 | jq ".triggers"`
+    local TRIGGERS_LEN=`echo $TRIGGERS | jq "length"`
+    if [ $TRIGGERS_LEN -ne 0 ];
+    then
+	echo
+	local TRIGGERS=`echo $TRIGGERS | jq "map(.name) | tostring"`
+        TRIGGERS=${TRIGGERS//\\/}
+	TRIGGERS=${TRIGGERS//\"/}
+	TRIGGERS=${TRIGGERS//\[/}
+	TRIGGERS=${TRIGGERS//\]/}
+	TRIGGERS=${TRIGGERS//\,/ }
+	for N in $TRIGGERS; do
+	    echo -e "  \033[00;32m发现并清理Trigger\033[00m $N"
+	    echo "[\"trigger-del\", \"$1\", \"$N\"]" | watchman -j > /dev/null
+	done
+	echo
+    fi
+}
+
+function create_dir() {
+    echo
+    echo -e "  \033[00;32m创建\033[00m $1"
+    mkdir $PROJECTS_PATH/$1
+    echo -e "  \033[00;32m创建\033[00m $1/js"
+    mkdir $PROJECTS_PATH/$1/js
+    echo -e "  \033[00;32m创建\033[00m $1/js/app.js"
+    touch $PROJECTS_PATH/$1/js/app.js
+    echo -e "  \033[00;32m创建\033[00m $1/styles"
+    mkdir $PROJECTS_PATH/$1/styles
+    echo -e "  \033[00;32m创建\033[00m $1/styles/app.scss"
+    touch $PROJECTS_PATH/$1/styles/app.scss
+    echo -e "  \033[00;32m创建\033[00m $1/images"
+    mkdir $PROJECTS_PATH/$1/images
+    echo -e "  \033[00;32m创建\033[00m $1/fonts"
+    mkdir $PROJECTS_PATH/$1/fonts
+    echo -e "  \033[00;32m创建\033[00m $1/pages"
+    mkdir $PROJECTS_PATH/$1/pages
+    echo -e "  \033[00;32m创建\033[00m $1/index.html"
+    echo "\
+<html>
+  <head>
+    <title>$1</title>
+    <meta charset=\"utf-8\">
+    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">
+    <meta http-equiv=\"x-ua-compatible\" content=\"ie=edge\">
+    <link rel=\"stylesheet\" href=\"/styles/app.css\" />
+  </head>
+  <body>
+    
+  </body>
+</html>
+" > $PROJECTS_PATH/$1/index.html
+    echo
+}
+
+function -main() {
+    if [ $# -eq 0 ];
+    then
+	echo "error: 缺少参数,请指定项目目录名称"
+    else
+	TARGET_PATH=$PROJECTS_PATH/$1
+	if [ -d $TARGET_PATH ];
+	then
+	    echo "error: 目录已存在"
+	else
+	    create_dir $1
+	    check_trigger $TARGET_PATH
+	    create_trigger $TARGET_PATH
+	    echo
+	    echo -e "  \033[00;32m完成创建\033[00m $1"
+	    echo -e "  \033[00;32m使用whisper-run启动\033[00m $1"
+	    echo
+	fi
+	    
+    fi
+}
+
+-main $@
+
+

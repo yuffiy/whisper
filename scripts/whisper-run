@@ -1,0 +1,68 @@
+#!/bin/bash
+
+WORKSPACE_PATH=~/workspace/web
+PROJECTS_PATH=$WORKSPACE_PATH/projects
+TEMP_PATH=$WORKSPACE_PATH/tmp
+SERVER_PATH=$WORKSPACE_PATH/server
+
+function clean_tmp() {
+    rm -r $TEMP_PATH
+    mkdir $TEMP_PATH
+}
+
+
+function copy_public() {
+    cp -r $1/fonts/ $TEMP_PATH/fonts/
+    cp -r $1/images/ $TEMP_PATH/images/
+    cp -r $1/pages/ $TEMP_PATH/pages/
+    cp $1/index.html $TEMP_PATH/
+}
+
+function copy_libs() {
+    echo
+}
+
+function copy_server() {
+    cp -r $SERVER_PATH/* $TEMP_PATH/
+}
+
+function inject_loader() {
+    cp $WORKSPACE_PATH/libs/js/require.min.js $TEMP_PATH/
+    local FILE=$TEMP_PATH/index.html
+    local INDEXHTML=`cat $FILE`
+    rm $FILE
+    echo -e ${INDEXHTML/\<\/head\>/\<script src\=\"require.min.js\" data-main=\"js/app\"\>\</script\> \<\/head\>} > $FILE
+}
+
+function watch() {
+    echo "[\"watch\", \"$1\"]" | watchman -j
+}
+
+function run-server() {
+    node $TEMP_PATH/server.js --harmony
+}
+
+function -main() {
+    if [ $# -eq 0 ];
+    then
+	echo "error: 缺少参数,请指定项目目录名称"
+    else
+	TARGET_PATH=$PROJECTS_PATH/$1
+	if [ ! -d $TARGET_PATH ];
+	then
+	    echo "error: 目录不存在"
+	else
+	    clean_tmp
+	    whisper-es6 $TARGET_PATH
+	    whisper-sass $TARGET_PATH
+	    copy_public $TARGET_PATH
+	    copy_server
+	    inject_loader
+	    watch $TARGET_PATH
+	    run-server
+	fi
+	    
+    fi
+}
+
+-main $@
