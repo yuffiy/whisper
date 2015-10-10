@@ -35,7 +35,7 @@ function inject_loader() {
 }
 
 function watch() {
-    echo "[\"watch\", \"$1\"]" | watchman -j
+    echo "[\"watch\", \"$1\"]" | watchman -j > /dev/null
 }
 
 function run-server() {
@@ -61,7 +61,6 @@ function -main() {
 	    watch $TARGET_PATH
 	    run-server
 	fi
-	    
     fi
 }
 
